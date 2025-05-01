@@ -1,0 +1,21 @@
+# Node.js
+node_modules/
+npm-debug.log*
+.env
+
+# React build
+client/build/
+client/node_modules/
+client/.env
+
+# VSCode and system files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Mongo dump files
+dump/
