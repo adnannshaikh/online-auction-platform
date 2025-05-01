@@ -10,21 +10,19 @@ const app = express();
 
 // Middleware
 app.use(cors({ origin: "http://localhost:3000", credentials: true }));
-app.use(express.json()); // To parse JSON requests
+app.use(express.json());
 app.use("/api/auth", authRoutes);
 
-// Sample route (you'll add real ones later)
+// Sample test route
 app.get("/", (req, res) => {
   res.send("Auction platform API is running...");
 });
 
 // MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected"))
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+}).then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // Start server
