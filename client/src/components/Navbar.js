@@ -34,6 +34,7 @@ const Navigation = () => {
           {isLoggedIn ? (
             <>
               <Nav.Link as={Link} to="/">Home</Nav.Link>
+              <Nav.Link as={Link} to="/browse">Browse</Nav.Link>
               <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
               <Nav.Link as={Link} to="/list-item">List Item</Nav.Link>
 

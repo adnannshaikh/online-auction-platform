@@ -6,7 +6,7 @@ const User = require("../models/User");
 const Item = require("../models/Item");
 const Bid = require("../models/bid");
 
-// Signup
+// 🔐 Signup
 router.post("/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -24,7 +24,7 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// Login
+// 🔐 Login
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -42,7 +42,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Get items listed by a user
+// 👤 Get user listed items
 router.get("/profile/:userId", async (req, res) => {
   try {
     const items = await Item.find({ seller: req.params.userId }).sort({ createdAt: -1 });
@@ -52,18 +52,35 @@ router.get("/profile/:userId", async (req, res) => {
   }
 });
 
-// List new item
+// 📦 List a new item
 router.post("/items", async (req, res) => {
   try {
-    const { title, description, basePrice, category, image, seller } = req.body;
-    const item = await Item.create({ title, description, basePrice, category, image, seller });
+    const { title, description, basePrice, category, seller } = req.body;
+    const item = await Item.create({
+      title,
+      description,
+      basePrice,
+      category,
+      images: [], // No images
+      seller,
+    });
     res.status(201).json({ message: "Item listed successfully", item });
   } catch (err) {
     res.status(500).json({ message: "Failed to list item" });
   }
 });
 
-// Get item details with bid history
+// 🛍️ Get public item listings
+router.get("/items/available", async (req, res) => {
+  try {
+    const items = await Item.find({ isSold: false }).sort({ createdAt: -1 });
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch available items" });
+  }
+});
+
+// 🕵️ Get item detail
 router.get("/item/:itemId", async (req, res) => {
   try {
     const itemId = req.params.itemId;
@@ -73,13 +90,11 @@ router.get("/item/:itemId", async (req, res) => {
     const endTime = new Date(item.createdAt).getTime() + 5 * 60 * 1000;
     let winnerId = null;
 
-    // ⏱ Mark item as sold if auction expired
     if (Date.now() >= endTime && !item.isSold) {
       item.isSold = true;
       await item.save();
-
       if (bids.length > 0) {
-        winnerId = bids[0].bidder?._id?.toString(); // extract top bidder's ID
+        winnerId = bids[0].bidder?._id?.toString();
       }
     }
 
@@ -90,8 +105,7 @@ router.get("/item/:itemId", async (req, res) => {
   }
 });
 
-
-// Submit a new bid
+// 💰 Submit bid
 router.post("/item/:itemId/bid", async (req, res) => {
   try {
     const { amount, bidderId } = req.body;
@@ -110,22 +124,11 @@ router.post("/item/:itemId/bid", async (req, res) => {
 
     const bid = await Bid.create({ amount, bidder: bidderId, item: itemId });
 
-    // No socket: just re-fetch on frontend after this
     res.status(201).json({ message: "Bid placed successfully", bid });
   } catch (err) {
     console.error("❌ Bid failed:", err);
     res.status(500).json({ message: "Failed to place bid" });
   }
 });
-// Get all available items (not sold)
-router.get("/items/available", async (req, res) => {
-    try {
-      const items = await Item.find({ isSold: false }).sort({ createdAt: -1 });
-      res.json(items);
-    } catch (err) {
-      res.status(500).json({ message: "Failed to fetch available items" });
-    }
-  });
-  
 
 module.exports = router;

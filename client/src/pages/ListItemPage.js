@@ -11,7 +11,6 @@ const ListItemPage = () => {
   const [description, setDescription] = useState("");
   const [basePrice, setBasePrice] = useState("");
   const [category, setCategory] = useState("");
-  const [image, setImage] = useState(""); // You can extend to upload later
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +20,6 @@ const ListItemPage = () => {
         description,
         basePrice,
         category,
-        image,
         seller: userId,
       });
 
@@ -40,27 +38,41 @@ const ListItemPage = () => {
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
             <Form.Label>Title</Form.Label>
-            <Form.Control value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <Form.Control
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Description</Form.Label>
-            <Form.Control as="textarea" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} required />
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Base Price</Form.Label>
-            <Form.Control type="number" value={basePrice} onChange={(e) => setBasePrice(e.target.value)} required />
+            <Form.Control
+              type="number"
+              value={basePrice}
+              onChange={(e) => setBasePrice(e.target.value)}
+              required
+            />
           </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Category</Form.Label>
-            <Form.Control value={category} onChange={(e) => setCategory(e.target.value)} required />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Image URL (optional)</Form.Label>
-            <Form.Control value={image} onChange={(e) => setImage(e.target.value)} />
+            <Form.Control
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              required
+            />
           </Form.Group>
 
           <Button variant="success" type="submit" className="w-100">

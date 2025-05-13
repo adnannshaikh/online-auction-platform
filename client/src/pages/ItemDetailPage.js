@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import {
   Container,
@@ -9,49 +9,42 @@ import {
   Badge,
   ListGroup,
   Carousel,
+  Toast,
+  ToastContainer
 } from "react-bootstrap";
 import dummyItems from "../data/dummyItems";
-import io from "socket.io-client";
-
-const socket = io("http://localhost:5000");
 
 const ItemDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [item, setItem] = useState(null);
   const [bids, setBids] = useState([]);
   const [bidAmount, setBidAmount] = useState("");
   const [timeLeft, setTimeLeft] = useState("00:00");
+  const [showToast, setShowToast] = useState(false);
   const userId = localStorage.getItem("userId") || "guest";
-
+  const isLoggedIn = !!localStorage.getItem("token");
   const isDummy = id.startsWith("item");
 
- useEffect(() => {
-  let countdownInterval;
+  useEffect(() => {
+    let countdownInterval;
 
-  if (isDummy) {
-    const dummy = dummyItems.find((d) => d._id === id);
-    setItem(dummy);
-    const localBids = JSON.parse(localStorage.getItem(`bids_${id}`)) || [];
-    setBids(localBids);
+    if (isDummy) {
+      const dummy = dummyItems.find((d) => d._id === id);
+      setItem(dummy);
+      const localBids = JSON.parse(localStorage.getItem(`bids_${id}`)) || [];
+      setBids(localBids);
+      countdownInterval = setInterval(() => updateCountdown(dummy), 1000);
+    } else {
+      fetchItem();
+      countdownInterval = setInterval(() => updateCountdown(), 1000);
+    }
 
-    // ✅ Pass dummy item explicitly every second
-    countdownInterval = setInterval(() => updateCountdown(dummy), 1000);
-  } else {
-    fetchItem();
-    socket.on("newBid", (data) => {
-      if (data.itemId === id) fetchItem();
-    });
-
-    // ✅ Uses live item state for backend items
-    countdownInterval = setInterval(() => updateCountdown(), 1000);
-  }
-
-  return () => {
-    clearInterval(countdownInterval);
-    if (!isDummy) socket.disconnect();
-  };
-}, []);
-
+    return () => {
+      clearInterval(countdownInterval);
+    };
+  }, []);
 
   const fetchItem = async () => {
     try {
@@ -66,14 +59,12 @@ const ItemDetailPage = () => {
 
   const updateCountdown = (itemData = item, winnerId = null) => {
     if (!itemData) return;
-
     const endTime = new Date(itemData.createdAt).getTime() + 5 * 60 * 1000;
     const now = Date.now();
     const diff = endTime - now;
 
     if (diff <= 0 && !itemData.isSold) {
       setItem({ ...itemData, isSold: true });
-
       const topBid = bids[0];
       const topBidderId = topBid?.bidderId || topBid?.bidder?._id;
       if (winnerId && topBidderId === userId) {
@@ -93,6 +84,11 @@ const ItemDetailPage = () => {
   const handleBidSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isLoggedIn) {
+      alert("Please login to place a bid.");
+      return;
+    }
+
     const amount = parseFloat(bidAmount);
     const highest = bids[0]?.amount || item.basePrice;
     if (amount <= highest) {
@@ -109,7 +105,7 @@ const ItemDetailPage = () => {
       const updated = [newBid, ...bids];
       setBids(updated);
       localStorage.setItem(`bids_${id}`, JSON.stringify(updated));
-      alert("Bid placed (local)");
+      setShowToast(true);
       setBidAmount("");
       return;
     }
@@ -119,7 +115,7 @@ const ItemDetailPage = () => {
         amount,
         bidderId: userId,
       });
-      alert(res.data.message);
+      setShowToast(true);
       setBidAmount("");
       fetchItem();
     } catch (err) {
@@ -131,6 +127,16 @@ const ItemDetailPage = () => {
 
   return (
     <Container className="mt-4">
+      <Button
+        variant="outline-secondary"
+        className="mb-3"
+        onClick={() =>
+          navigate(location.state?.from === "browse" ? "/browse" : "/dashboard")
+        }
+      >
+        ← Back to {location.state?.from === "browse" ? "Browse" : "Dashboard"}
+      </Button>
+
       <Card className="p-4 shadow">
         {item.images?.length > 0 ? (
           <Carousel className="mb-4">
@@ -152,7 +158,7 @@ const ItemDetailPage = () => {
         ) : (
           <img
             src="/images/placeholder.jpg"
-            alt="No images"
+            alt="No image"
             className="mb-4 w-100"
             style={{ maxHeight: "300px", objectFit: "cover" }}
           />
@@ -200,6 +206,18 @@ const ItemDetailPage = () => {
           )}
         </ListGroup>
       </Card>
+
+      <ToastContainer position="top-end" className="p-3">
+        <Toast
+          show={showToast}
+          onClose={() => setShowToast(false)}
+          bg="success"
+          delay={2500}
+          autohide
+        >
+          <Toast.Body className="text-white">✅ Bid placed successfully!</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </Container>
   );
 };
